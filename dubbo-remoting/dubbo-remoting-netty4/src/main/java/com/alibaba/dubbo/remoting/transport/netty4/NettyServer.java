@@ -66,6 +66,7 @@ public class NettyServer extends AbstractServer implements Server {
 
     public NettyServer(URL url, ChannelHandler handler) throws RemotingException {
         super(url, ChannelHandlers.wrap(handler, ExecutorUtil.setThreadName(url, SERVER_THREAD_POOL_NAME)));
+        logger.info("使用了Netty4 Server");
     }
 
     @Override

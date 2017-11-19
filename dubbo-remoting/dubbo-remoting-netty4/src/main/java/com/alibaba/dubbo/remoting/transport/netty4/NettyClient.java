@@ -56,6 +56,7 @@ public class NettyClient extends AbstractClient {
 
     public NettyClient(final URL url, final ChannelHandler handler) throws RemotingException {
         super(url, wrapChannelHandler(url, handler));
+        logger.info("使用了Netty Client");
     }
 
     @Override
