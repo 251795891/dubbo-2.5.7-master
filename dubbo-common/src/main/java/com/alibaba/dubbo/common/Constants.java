@@ -259,6 +259,10 @@ public class Constants {
 
     public static final String SERIALIZATION_KEY = "serialization";
 
+    // modified by arivn
+    // TODO change to a better name
+    public static final String  OPTIMIZER_KEY                  = "optimizer";
+
     public static final String EXCHANGER_KEY = "exchanger";
 
     public static final String TRANSPORTER_KEY = "transporter";
