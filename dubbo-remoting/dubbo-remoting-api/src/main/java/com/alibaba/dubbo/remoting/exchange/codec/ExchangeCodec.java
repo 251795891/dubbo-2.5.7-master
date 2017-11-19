@@ -19,6 +19,7 @@ import com.alibaba.dubbo.common.io.Bytes;
 import com.alibaba.dubbo.common.io.StreamUtils;
 import com.alibaba.dubbo.common.logger.Logger;
 import com.alibaba.dubbo.common.logger.LoggerFactory;
+import com.alibaba.dubbo.common.serialize.Cleanable;
 import com.alibaba.dubbo.common.serialize.ObjectInput;
 import com.alibaba.dubbo.common.serialize.ObjectOutput;
 import com.alibaba.dubbo.common.serialize.Serialization;
@@ -223,12 +224,19 @@ public class ExchangeCodec extends TelnetCodec {
         buffer.writerIndex(savedWriteIndex + HEADER_LENGTH);
         ChannelBufferOutputStream bos = new ChannelBufferOutputStream(buffer);
         ObjectOutput out = serialization.serialize(channel.getUrl(), bos);
-        if (req.isEvent()) {
-            encodeEventData(channel, out, req.getData());
-        } else {
-            encodeRequestData(channel, out, req.getData());
+        try {
+            if (req.isEvent()) {
+                encodeEventData(channel, out, req.getData());
+            } else {
+                encodeRequestData(channel, out, req.getData());
+            }
+            out.flushBuffer();
+        } finally {
+            if (out instanceof Cleanable) {
+                ((Cleanable) out).cleanup();
+            }
         }
-        out.flushBuffer();
+
         bos.flush();
         bos.close();
         int len = bos.writtenBytes();
@@ -261,15 +269,21 @@ public class ExchangeCodec extends TelnetCodec {
             buffer.writerIndex(savedWriteIndex + HEADER_LENGTH);
             ChannelBufferOutputStream bos = new ChannelBufferOutputStream(buffer);
             ObjectOutput out = serialization.serialize(channel.getUrl(), bos);
-            // encode response data or error message.
-            if (status == Response.OK) {
-                if (res.isHeartbeat()) {
-                    encodeHeartbeatData(channel, out, res.getResult());
-                } else {
-                    encodeResponseData(channel, out, res.getResult());
+            try { // encode response data or error message.
+                if (status == Response.OK) {
+                    if (res.isHeartbeat()) {
+                        encodeHeartbeatData(channel, out, res.getResult());
+                    } else {
+                        encodeResponseData(channel, out, res.getResult());
+                    }
+                } else out.writeUTF(res.getErrorMessage());
+                out.flushBuffer();
+            } finally {
+                // modified by lishen
+                if (out instanceof Cleanable) {
+                    ((Cleanable) out).cleanup();
                 }
-            } else out.writeUTF(res.getErrorMessage());
-            out.flushBuffer();
+            }
             bos.flush();
             bos.close();
 
